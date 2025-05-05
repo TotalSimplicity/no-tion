@@ -21,10 +21,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: prod
+    environment:
+      - VITE_API_URL=${API_URL}
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     ports:
       - 3000:3000
-    environment:
-      - PORT=3000
   
   backend:
     build:
@@ -39,6 +41,7 @@ services:
       - MONGO_HOST=mongodb
       - MONGO_PORT=27017
       - MONGO_DB=${MONGO_DB}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       - mongodb
   
@@ -67,13 +70,15 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: dev
+    environment:
+      - VITE_API_URL=${API_URL}
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     ports:
       - 5173:5173
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    environment:
-      - CHOKIDAR_USEPOLLING=true
 
   backend:
     build:
@@ -91,6 +96,7 @@ services:
       - MONGO_HOST=mongodb
       - MONGO_PORT=27017
       - MONGO_DB=${MONGO_DB}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       - mongodb
   
