@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 const noteSchema = new mongoose.Schema(
   {
     title: {
@@ -10,9 +9,19 @@ const noteSchema = new mongoose.Schema(
     },
     content: {
       type: String,
-      required: false,
     },
-    tags: [String]
+    tags: [String],
+    parent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Note",
+      default: null,
+    },
+    children: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Note",
+      },
+    ],
   },
   {
     timestamps: true,
