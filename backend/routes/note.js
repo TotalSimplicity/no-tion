@@ -26,9 +26,24 @@ router.get("/:id", async (req, res) => {
   }
 })
 
+router.get("/get-children/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const notes = await Note.find({ parent: id });
+    if (!notes) {
+      return res.status(404).json({ message: "No children notes found" });
+    }
+    res.status(200).json(notes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+);
+
 router.post("/", async (req, res) => {
   try {
-    const { title, content, tags } = req.body;
+    const { title, content, tags, parentId } = req.body;
     const newNote = new Note({
       title,
       content,
@@ -49,26 +64,41 @@ router.post("/", async (req, res) => {
   }
 });
 
+
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const note = await Note.findByIdAndDelete(id)
+    const note = await Note.findById(id)
 
     if (!note) {
       return res.status(404).json({ message: "Note not found" });
     }
 
-    if (note.parent) {
-      await Note.findByIdAndUpdate(note.parent, {
-        $pull: { children: note._id },
-      });
-    }
-    res.status(200).json({ message: "Note deleted successfully" });
+    await deleteNoteAndChildren(id);
+    res.status(200).json({ message: "Note and its children deleted successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+async function deleteNoteAndChildren(noteId) {
+  const note = await Note.findById(noteId);
+  if (!note) return;
+
+  for (const childId of note.children) {
+    await deleteNoteAndChildren(childId);
+  }
+
+  if (note.parent) {
+    await Note.findByIdAndUpdate(note.parent, {
+      $pull: { children: note._id },
+    });
+  }
+
+  await Note.findByIdAndDelete(noteId);
+}
+
 
 router.patch("/:id", async (req, res) => {
   try {
