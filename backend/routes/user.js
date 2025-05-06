@@ -7,12 +7,18 @@ const crypto = require("crypto-js");
 const User = require("../models/User");
 const JWT_SECRET = process.env.JWT_SECRET;
 const { authenticateToken } = require("../utils/tokenAuth");
+
 async function verifyPassword(username, plainPassword) {
   const user = await User.findOne({ username }).select("+passwordHash");
-  if (!user) {
+  
+  
+  if (user === null) {
     return false;
   }
   const hashedPassword = crypto.MD5(plainPassword).toString();
+  console.log("server pass", user.passwordHash);
+  console.log("pass input", hashedPassword);
+  console.log(user.passwordHash === hashedPassword);
   return user.passwordHash === hashedPassword;
 }
 
@@ -27,16 +33,17 @@ async function getUserByUsername(username) {
 router.post("/login", async (req, res) => {
   const { username, plainPassword } = req.body;
   try {
-    if (!verifyPassword(username, plainPassword)) {
-      return res.status(401);
+    const passwordVerified = await verifyPassword(username, plainPassword);
+    if (!passwordVerified) {
+      return res.status(401).json({ error: "Invalid credentials" });
     }
     const token = jwtSign({ username: username }, JWT_SECRET, {
-      expiresIn: "604800",
+      expiresIn: "604800s",
     });
     return res.status(200).json({ token });
   } catch (err) {
     console.error(err);
-    return res.status(500);
+    return res.status(500).json({ error: "Internal server error" });;
   }
 });
 

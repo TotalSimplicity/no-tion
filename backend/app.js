@@ -24,7 +24,7 @@ app.use(
 
 app.use("/note", authenticateToken, noteRoute);
 app.use("/user", userRoute);
-console.log("1");
+console.log("2");
 http.createServer(app).listen(3001, () => {
   console.log("HTTP backend is running on 3001 successfully");
 });

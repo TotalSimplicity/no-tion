@@ -1,5 +1,6 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
+    import { goto } from '$app/navigation';
     import apiClient from '$lib/apiClient';
     import { ChevronRight, ChevronDown, Plus, Trash, Edit } from 'lucide-svelte';
     import NoteIcon from './noteicon.svelte';
@@ -27,14 +28,12 @@
             name: 'edit',
             onClick: handleEditFromMenu,
             displayText: "Edit",
-            icon: Edit,
             class: 'text-blue-500'
         },
         {
             name: 'delete',
             onClick: deleteNote,
             displayText: "Delete",
-            icon: Trash,
             class: 'text-red-500'
         }
     ];
@@ -207,14 +206,15 @@
     <!-- Note item -->
     <div 
         class="group cursor-pointer flex w-full bg-zinc-900 rounded-md border-[1px] border-zinc-700 justify-between items-center h-8 px-2 hover:border-zinc-500 transition-colors"
-        on:contextmenu={handleRightClick}
+        
+        oncontextmenu={handleRightClick}
     >
         <!-- Left side: Expand/Collapse icon (if has children) -->
         <div class="flex items-center">
             {#if children.length > 0}
                 <button 
                     class="mr-1 flex items-center justify-center w-5 h-5 text-zinc-400 hover:text-white transition-colors"
-                    on:click={toggleDropdown}
+                    onclick={toggleDropdown}
                 >
                     {#if dropdown}
                         <ChevronDown size={16} />
@@ -227,29 +227,34 @@
             {/if}
             
             <!-- Note title -->
-            {#if isEditingTitle}
+            
+        </div>
+        {#if isEditingTitle}
                 <!-- Separate component for editing mode -->
-                <div class="flex-grow" on:click={preventPropagation}>
+                <div class="flex-grow" onclick={preventPropagation}>
                     <input 
                         type="text" 
                         bind:value={editedTitle}
                         bind:this={titleInputRef}
                         class="bg-zinc-800 text-white px-1 rounded outline-none field-sizing-content focus:ring-1 focus:ring-blue-500"
-                        on:keydown={handleKeyDown}
+                        onkeydown={handleKeyDown}
                     />
                 </div>
             {:else}
+                <button 
+                    onclick={() => {goto(`/note/${note._id}`);preventPropagation(event);}}
+                    class="flex-grow flex items-center justify-start"
+                    >
                 <span 
                     class="truncate max-w-30"
-                    on:dblclick={startEditing}
+                    ondblclick={startEditing}
                 >{note.title}</span>
+                </button>
             {/if}
-        </div>
-        
         <!-- Add child button -->
         <button 
             class="invisible group-hover:visible flex items-center justify-center w-5 h-5 text-zinc-400 hover:text-white transition-colors"
-            on:click={addChildNote}
+            onclick={addChildNote}
             title="Add child note"
         >
             <Plus size={16} />
@@ -276,7 +281,7 @@
         {#each menuItems as item}
             <button 
                 class="w-full text-left px-4 py-2 hover:bg-zinc-800 flex items-center gap-2 transition-colors"
-                on:click={item.onClick}
+                onclick={item.onClick}
             >
                 <svelte:component this={item.icon} size={16} class={item.class} />
                 <span class={item.class}>{item.displayText}</span>
