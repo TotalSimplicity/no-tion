@@ -11,7 +11,7 @@
     });
 </script>
 
-<div class="flex md:flex-row flex-col h-svh w-full">
+<div class="flex md:flex-row flex-col h-svh w-full no-scrollbar">
 {#if page.url.pathname !== '/login'}
 <Sidebar />
 {/if}

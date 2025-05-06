@@ -12,21 +12,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const note = await Note.findById(id)
-    if (!note) {
-      return res.status(404).json({ message: "Note not found" });
-    }
-    res.status(200).json(note);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-})
 
-router.get("/get-children/:id", async (req, res) => {
+router.get("/:id/get-children", async (req, res) => {
   try {
     const { id } = req.params;
     const notes = await Note.find({ parent: id });
@@ -38,22 +25,37 @@ router.get("/get-children/:id", async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
-}
-);
+});
+
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const note = await Note.findById(id);
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+    res.status(200).json(note);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 
 router.post("/", async (req, res) => {
   try {
-    const { title, content, tags, parentId } = req.body;
+    const { title, content, tags, parent } = req.body;
     const newNote = new Note({
       title,
       content,
       tags,
-      parent: parentId || null,
+      parent: parent || null,
     });
-    const savedNote = await newNote.save()
+    const savedNote = await newNote.save();
 
-    if (parentId) {
-      await Note.findByIdAndUpdate(parentId, {
+    if (parent) {
+      await Note.findByIdAndUpdate(parent, {
         $push: { children: savedNote._id },
       });
     }
@@ -64,18 +66,19 @@ router.post("/", async (req, res) => {
   }
 });
 
-
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const note = await Note.findById(id)
+    const note = await Note.findById(id);
 
     if (!note) {
       return res.status(404).json({ message: "Note not found" });
     }
 
     await deleteNoteAndChildren(id);
-    res.status(200).json({ message: "Note and its children deleted successfully" });
+    res
+      .status(200)
+      .json({ message: "Note and its children deleted successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
@@ -99,37 +102,56 @@ async function deleteNoteAndChildren(noteId) {
   await Note.findByIdAndDelete(noteId);
 }
 
-
 router.patch("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, tags, parentId } = req.body;
-
+    
+    // Get the note to update
     const note = await Note.findById(id);
     if (!note) {
       return res.status(404).json({ message: "Note not found" });
     }
 
-    if (parentId !== undefined && parentId !== note.parent?.toString()) {
+    // Create update object with only the fields provided in the request
+    const updateFields = {};
+    const { title, content, tags, parent } = req.body;
+    
+    // Only add fields to the update object if they were provided
+    if (title !== undefined) updateFields.title = title;
+    if (content !== undefined) updateFields.content = content;
+    if (tags !== undefined) updateFields.tags = tags;
+    if (parent !== undefined) updateFields.parent = parent || null;
+
+    // Special handling for parent changes to maintain referential integrity
+    if (parent !== undefined && parent !== note.parent?.toString()) {
+      // Remove this note from old parent's children array
       if (note.parent) {
         await Note.findByIdAndUpdate(note.parent, {
           $pull: { children: note._id },
         });
       }
-      if (parentId) {
-        await Note.findByIdAndUpdate(parentId, {
+      
+      // Add this note to new parent's children array
+      if (parent) {
+        await Note.findByIdAndUpdate(parent, {
           $push: { children: note._id },
         });
       }
     }
 
-    const updatedNote = await Note.findByIdAndUpdate(
-      id,
-      { title, content, tags, parent: parentId || null },
-      { new: true }
-    );
-
-    res.status(200).json(updatedNote);
+    // Only perform update if there are fields to update
+    if (Object.keys(updateFields).length > 0) {
+      const updatedNote = await Note.findByIdAndUpdate(
+        id,
+        updateFields,
+        { new: true }
+      );
+      
+      res.status(200).json(updatedNote);
+    } else {
+      // If no fields were provided to update, just return the existing note
+      res.status(200).json(note);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
