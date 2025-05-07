@@ -1,50 +1,46 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { notes, updateNote } from '$lib/note-data';
-    import { page } from '$app/stores';
+    import { getNotes, updateNote } from '$lib/note-data.svelte';
+    import { page } from '$app/state';
     import { get } from 'svelte/store';
-    import { derived, writable } from 'svelte/store';
 
     
-    let key = $state($page.params.noteid);
-    let note = writable(derived(notes, $notes => $notes.find(n => n._id === key)));
-    let localNote = $note;
+    let key = $state(page.params.noteid);
+    let note = $derived(getNotes().find(n => n._id === key));
     onMount(() => {
-        if (!$note) {
+        if (!getNotes()) {
             // Handle the case where the note is not found
             console.error('Note not found');
         }
-        console.log("key", key);
-        console.log("note", get($note));
-        console.log("notes", $notes);
     });
 
     $effect(() => {
-        if (key) {
-            console.log("key", key);
+        if (page.params.noteid) {
+            key = page.params.noteid;
         }
     });
 
 
     function handleUpdate() {
-        if ($note) {
-            updateNote($note._id, { title: localNote.title, content: localNote.content });
+        if (note) {
+            updateNote(note._id, { title: note.title, content: note.content });
         }
     }
 </script>
-
-{#if $note}
+{#key key}
+{#if note}
     <input
         oninput={handleUpdate}
         type="text"
-        bind:value={$note.title}
+        bind:value={note.title}
         class="text-white"
     />
     <textarea
         class="bg-black text-white w-full h-[50svh] border-2 border-gray-800 rounded-md p-2"
-        bind:value={$note.content}
+        bind:value={note.content}
         oninput={handleUpdate}
-    />
+    ></textarea>
 {:else}
     <p>Loading...</p>
 {/if}
+{/key}

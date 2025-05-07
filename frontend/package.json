@@ -41,5 +41,8 @@
 		"axios": "^1.9.0",
 		"dotenv": "^16.5.0",
 		"lucide-svelte": "^0.507.0"
+	},
+	"optionalDependencies": {
+		"@rollup/rollup-linux-x64-gnu": "4.6.1"
 	}
 }

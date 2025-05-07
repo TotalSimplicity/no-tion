@@ -1,7 +1,7 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
     import { goto } from '$app/navigation';
-    import { notes, updateNote, addNote, deleteNote as deleteNoteFromStore } from '$lib/note-data';
+    import { getNotes, updateNote, addNote, deleteNote as deleteNoteFromStore } from '$lib/note-data.svelte';
     import apiClient from '$lib/apiClient';
     import { ChevronRight, ChevronDown, Plus, Trash, Edit } from 'lucide-svelte';
     import NoteIcon from './noteicon.svelte';
@@ -10,7 +10,7 @@
     // Props
     let { noteId, parentGetChildren } = $props();
     
-    let storedNote = derived(notes, $notes => $notes.find(n => n._id === noteId));
+    let note = $derived(getNotes().filter(n => n._id === noteId)[0]);
     // Reactive state
     let dropdown = $state(false);
     let children = $state([]);
@@ -18,7 +18,7 @@
     let contextMenuPosition = $state({ x: 0, y: 0 });
     let menuDimensions = $state({ width: 0, height: 0 });
     let isEditingTitle = $state(false);
-    let editedTitle = $state($storedNote ? $storedNote.title : '');
+    let editedTitle = $state(note.title);
     let titleInputRef;
     
     // Edit mode is managed through a separate variable not connected to Svelte's reactivity
@@ -69,8 +69,6 @@
         setTimeout(() => {
             document.addEventListener('click', documentClickHandler);
         }, 100);
-        console.log("Notestore ->", $storedNote);
-        console.log("NoteId ->", noteId);
     });
     
     onDestroy(() => {
@@ -81,7 +79,7 @@
     });
 
     async function fetchChildren() {
-        children = $notes.filter((n) => n.parent === noteId);
+        children = getNotes().filter((n) => n.parent === noteId);
     }
     
     async function addChildNote(e) {
@@ -95,7 +93,7 @@
 
     async function deleteNote() {
         await deleteNoteFromStore(noteId);
-        if ($storedNote.parent) {
+        if (note.parent) {
             parentGetChildren();
         } else {
             goto('/');
@@ -108,7 +106,7 @@
         editModeActive = true;
         
         isEditingTitle = true;
-        editedTitle = $storedNote ? $storedNote.title : '';
+        editedTitle = note ? note.title : '';
         
         setTimeout(() => {
             if (titleInputRef) {
@@ -129,9 +127,9 @@
         editModeActive = false;
 
         if (editedTitle.trim() === '') {
-            editedTitle = $storedNote ? $storedNote.title : '';
+            editedTitle = note ? note.title : '';
             isEditingTitle = false;
-        } else if (editedTitle !== $storedNote ? $storedNote.title : '') {
+        } else if (editedTitle !== note ? note.title : '') {
             updateNote(noteId, { title: editedTitle }).then(() => {
                 isEditingTitle = false;
             });
@@ -146,7 +144,7 @@
             finishEditing();
         } else if (event.key === 'Escape') {
             event.preventDefault();
-            editedTitle = $storedNote ? $storedNote.title : '';
+            editedTitle = note ? note.title : '';
             editModeActive = false;
             isEditingTitle = false;
         }
@@ -225,7 +223,7 @@
                 <span 
                     class="truncate max-w-30"
                     ondblclick={startEditing}
-                >{$storedNote ? $storedNote.title : 'Loading...'}</span>
+                >{note ? note.title : 'Loading...'}</span>
                 </button>
             {/if}
         <button 
