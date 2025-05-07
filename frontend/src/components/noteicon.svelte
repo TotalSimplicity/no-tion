@@ -8,8 +8,9 @@
     import { derived } from 'svelte/store';
 
     // Props
-    let { note, parentGetChildren } = $props();
-
+    let { noteId, parentGetChildren } = $props();
+    
+    let storedNote = derived(notes, $notes => $notes.find(n => n._id === noteId));
     // Reactive state
     let dropdown = $state(false);
     let children = $state([]);
@@ -17,14 +18,13 @@
     let contextMenuPosition = $state({ x: 0, y: 0 });
     let menuDimensions = $state({ width: 0, height: 0 });
     let isEditingTitle = $state(false);
-    let editedTitle = $state(note.title);
+    let editedTitle = $state($storedNote ? $storedNote.title : '');
     let titleInputRef;
     
     // Edit mode is managed through a separate variable not connected to Svelte's reactivity
     // to prevent race conditions with click events
     let editModeActive = false;
 
-    let storedNote = derived(notes, $notes => $notes.find(n => n._id === note._id));
 
     
     // Context menu items
@@ -70,6 +70,7 @@
             document.addEventListener('click', documentClickHandler);
         }, 100);
         console.log("Notestore ->", $storedNote);
+        console.log("NoteId ->", noteId);
     });
     
     onDestroy(() => {
@@ -80,21 +81,21 @@
     });
 
     async function fetchChildren() {
-        children = $notes.filter((n) => n.parent === note._id);
+        children = $notes.filter((n) => n.parent === noteId);
     }
     
     async function addChildNote(e) {
         await addNote({
             title: 'New Note',
-            parent: note._id
+            parent: noteId
         });
         await fetchChildren();
         dropdown = true;
     }
 
     async function deleteNote() {
-        await deleteNoteFromStore(note._id);
-        if (note.parent) {
+        await deleteNoteFromStore(noteId);
+        if ($storedNote.parent) {
             parentGetChildren();
         } else {
             goto('/');
@@ -107,7 +108,7 @@
         editModeActive = true;
         
         isEditingTitle = true;
-        editedTitle = $storedNote.title;
+        editedTitle = $storedNote ? $storedNote.title : '';
         
         setTimeout(() => {
             if (titleInputRef) {
@@ -128,10 +129,10 @@
         editModeActive = false;
 
         if (editedTitle.trim() === '') {
-            editedTitle = $storedNote.title;
+            editedTitle = $storedNote ? $storedNote.title : '';
             isEditingTitle = false;
-        } else if (editedTitle !== $storedNote.title) {
-            updateNote(note._id, { title: editedTitle }).then(() => {
+        } else if (editedTitle !== $storedNote ? $storedNote.title : '') {
+            updateNote(noteId, { title: editedTitle }).then(() => {
                 isEditingTitle = false;
             });
         } else {
@@ -145,7 +146,7 @@
             finishEditing();
         } else if (event.key === 'Escape') {
             event.preventDefault();
-            editedTitle = $storedNote.title;
+            editedTitle = $storedNote ? $storedNote.title : '';
             editModeActive = false;
             isEditingTitle = false;
         }
@@ -218,13 +219,13 @@
                 </div>
             {:else}
                 <button 
-                    onclick={() => {goto(`/note/${note._id}`);preventPropagation(event);}}
+                    onclick={() => {goto(`/note/${noteId}`);preventPropagation(event);}}
                     class="flex-grow flex items-center justify-start"
                     >
                 <span 
                     class="truncate max-w-30"
                     ondblclick={startEditing}
-                >{$storedNote.title}</span>
+                >{$storedNote ? $storedNote.title : 'Loading...'}</span>
                 </button>
             {/if}
         <button 
@@ -239,7 +240,7 @@
     {#if dropdown && children.length > 0}
         <div class="flex flex-col w-full pl-4 gap-1 mt-1 border-l border-zinc-800">
             {#each children as child (child._id)}
-                <NoteIcon note={child} parentGetChildren={fetchChildren} />
+                <NoteIcon noteId={child._id} parentGetChildren={fetchChildren} />
             {/each}
         </div>
     {/if}

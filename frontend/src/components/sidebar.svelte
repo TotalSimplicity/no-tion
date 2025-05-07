@@ -18,7 +18,7 @@
     <a href="/">No-tion</a>
     <div class="flex flex-col w-full mx-1 mt-20 gap-2 h-[50svh] overflow-y-auto no-scrollbar">
         {#each $notes.filter(note => note.parent === null) as note}
-            <NoteIcon note={note} parentFetchChildren={fetchNotes} />
+            <NoteIcon noteId={note._id} parentFetchChildren={fetchNotes} />
         {/each}
     </div>
     
