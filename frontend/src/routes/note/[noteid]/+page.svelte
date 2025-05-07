@@ -4,13 +4,13 @@
     import { page } from '$app/stores';
     import { get } from 'svelte/store';
 
-    let note = $state();
-    let key = $page.params.noteid;
+    let note = $derived(get(notes).find((n) => n._id === key));
+    let key = $state();
 
     $effect(() => {
         key = $page.params.noteid;
-        note = get(notes).find((n) => n._id === key);
     });
+
 
     function handleUpdate() {
         if (note) {

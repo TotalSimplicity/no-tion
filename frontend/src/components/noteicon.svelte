@@ -5,6 +5,7 @@
     import apiClient from '$lib/apiClient';
     import { ChevronRight, ChevronDown, Plus, Trash, Edit } from 'lucide-svelte';
     import NoteIcon from './noteicon.svelte';
+    import { derived } from 'svelte/store';
 
     // Props
     let { note, parentGetChildren } = $props();
@@ -22,6 +23,9 @@
     // Edit mode is managed through a separate variable not connected to Svelte's reactivity
     // to prevent race conditions with click events
     let editModeActive = false;
+
+    let storedNote = derived(notes, $notes => $notes.find(n => n._id === note._id));
+
     
     // Context menu items
     const menuItems = [
@@ -65,6 +69,7 @@
         setTimeout(() => {
             document.addEventListener('click', documentClickHandler);
         }, 100);
+        console.log("Notestore ->", $storedNote);
     });
     
     onDestroy(() => {
@@ -102,7 +107,7 @@
         editModeActive = true;
         
         isEditingTitle = true;
-        editedTitle = note.title;
+        editedTitle = $storedNote.title;
         
         setTimeout(() => {
             if (titleInputRef) {
@@ -123,11 +128,10 @@
         editModeActive = false;
 
         if (editedTitle.trim() === '') {
-            editedTitle = note.title;
+            editedTitle = $storedNote.title;
             isEditingTitle = false;
-        } else if (editedTitle !== note.title) {
+        } else if (editedTitle !== $storedNote.title) {
             updateNote(note._id, { title: editedTitle }).then(() => {
-                note.title = editedTitle;
                 isEditingTitle = false;
             });
         } else {
@@ -141,7 +145,7 @@
             finishEditing();
         } else if (event.key === 'Escape') {
             event.preventDefault();
-            editedTitle = note.title;
+            editedTitle = $storedNote.title;
             editModeActive = false;
             isEditingTitle = false;
         }
@@ -174,6 +178,8 @@
     function preventPropagation(e) {
         e.stopPropagation();
     }
+
+
 </script>
 
 <div class="relative text-xl">
@@ -218,7 +224,7 @@
                 <span 
                     class="truncate max-w-30"
                     ondblclick={startEditing}
-                >{note.title}</span>
+                >{$storedNote.title}</span>
                 </button>
             {/if}
         <button 
