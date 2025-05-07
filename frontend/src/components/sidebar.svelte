@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import { notes } from '$lib/note-data';
+    import { notes, fetchNotes } from '$lib/note-data';
     import apiClient from '$lib/apiClient';
     import NoteIcon from './noteicon.svelte';
     import { onMount } from 'svelte';
@@ -8,14 +8,7 @@
         isMenuOpen = !isMenuOpen;
     }
 
-    //let notes = $state([]);
-
-    async function fetchNotes() {
-        const response = await apiClient.get('/note');
-        //notes = response.data;
-        $notes = response.data;
-
-    }
+    
     onMount(async () => {
         fetchNotes();
     });

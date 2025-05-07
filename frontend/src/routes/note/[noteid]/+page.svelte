@@ -1,34 +1,36 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-    import { notes } from '$lib/note-data';
-	import apiClient from '$lib/apiClient';
-	import { page } from '$app/stores';
+    import { onMount } from 'svelte';
+    import { notes, updateNote } from '$lib/note-data';
+    import { page } from '$app/stores';
+    import { get } from 'svelte/store';
 
-	let note = $state({});
-	let key = $state($page.params.noteid);
+    let note = $state();
+    let key = $page.params.noteid;
 
-	$effect(() => {
-		key = $page.params.noteid;
-		fetchNote();
-	});
+    $effect(() => {
+        key = $page.params.noteid;
+        note = get(notes).find((n) => n._id === key);
+    });
 
-	async function fetchNote() {
-		const response = await apiClient.get(`/note/${$page.params.noteid}`);
-		note = response.data;
-	}
-
-	async function updateNote() {
-		if (note && note.title !== undefined) {
-			await apiClient.patch(`/note/${$page.params.noteid}`, note);
-		}
-	}
+    function handleUpdate() {
+        if (note) {
+            updateNote(note._id, { title: note.title, content: note.content });
+        }
+    }
 </script>
 
-{#key key}
-	<input oninput={updateNote} type="text" bind:value={note.title} class="text-white" />
-	<textarea
-		class="bg-black text-white w-full h-[50svh] border-2 border-gray-800 rounded-md p-2"
-		bind:value={note.content}
-		oninput={updateNote}
-	/>
-{/key}
+{#if note}
+    <input
+        oninput={handleUpdate}
+        type="text"
+        bind:value={note.title}
+        class="text-white"
+    />
+    <textarea
+        class="bg-black text-white w-full h-[50svh] border-2 border-gray-800 rounded-md p-2"
+        bind:value={note.content}
+        oninput={handleUpdate}
+    />
+{:else}
+    <p>Loading...</p>
+{/if}

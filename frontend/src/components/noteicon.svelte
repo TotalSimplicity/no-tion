@@ -1,12 +1,13 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
     import { goto } from '$app/navigation';
+    import { notes, updateNote, addNote, deleteNote as deleteNoteFromStore } from '$lib/note-data';
     import apiClient from '$lib/apiClient';
     import { ChevronRight, ChevronDown, Plus, Trash, Edit } from 'lucide-svelte';
     import NoteIcon from './noteicon.svelte';
 
     // Props
-    let { note, parentFetchChildren } = $props();
+    let { note, parentGetChildren } = $props();
 
     // Reactive state
     let dropdown = $state(false);
@@ -74,47 +75,35 @@
     });
 
     async function fetchChildren() {
-        try {
-            const response = await apiClient.get(`/note/${note._id}/get-children`);
-            children = response.data;
-        } catch (error) {
-            console.error('Failed to fetch children:', error);
-        }
+        children = $notes.filter((n) => n.parent === note._id);
     }
     
-    function addChildNote(e) {
-        e.stopPropagation();
-        apiClient.post('/note', {
+    async function addChildNote(e) {
+        await addNote({
             title: 'New Note',
             parent: note._id
-        }).then(() => {
-            fetchChildren();
-            dropdown = true; // Auto-expand to show the new child
-        }).catch(error => {
-            console.error('Failed to add child note:', error);
         });
+        await fetchChildren();
+        dropdown = true;
     }
 
-    function deleteNote() {
-        apiClient.delete(`/note/${note._id}`).then(() => {
-            showContextMenu = false;
-            parentFetchChildren();
-        }).catch(error => {
-            console.error('Failed to delete note:', error);
-        });
+    async function deleteNote() {
+        await deleteNoteFromStore(note._id);
+        if (note.parent) {
+            parentGetChildren();
+        } else {
+            goto('/');
+        }
     }
 
     function startEditing(e) {
         if (e) e.stopPropagation();
         
-        // Set our non-reactive flag first
         editModeActive = true;
         
-        // Then update the reactive state to trigger UI update
         isEditingTitle = true;
         editedTitle = note.title;
         
-        // Schedule focus to occur after the DOM update
         setTimeout(() => {
             if (titleInputRef) {
                 titleInputRef.focus();
@@ -124,37 +113,24 @@
     }
     
     function handleEditFromMenu() {
-        // Close menu first
         showContextMenu = false;
-        
-        // Schedule editing to start after a small delay
-        // This helps avoid the immediate click event that would close the editor
         setTimeout(() => {
             startEditing();
         }, 100);
     }
     
     function finishEditing() {
-        // First update our non-reactive flag
         editModeActive = false;
-        
+
         if (editedTitle.trim() === '') {
-            editedTitle = note.title; // Reset to original if empty
+            editedTitle = note.title;
             isEditingTitle = false;
         } else if (editedTitle !== note.title) {
-            // Only make API call if title actually changed
-            apiClient.patch(`/note/${note._id}`, {
-                title: editedTitle
-            }).then(() => {
+            updateNote(note._id, { title: editedTitle }).then(() => {
                 note.title = editedTitle;
-                isEditingTitle = false;
-            }).catch(error => {
-                console.error('Failed to update note title:', error);
-                editedTitle = note.title; // Reset on error
                 isEditingTitle = false;
             });
         } else {
-            // No change, just exit edit mode
             isEditingTitle = false;
         }
     }
@@ -165,7 +141,7 @@
             finishEditing();
         } else if (event.key === 'Escape') {
             event.preventDefault();
-            editedTitle = note.title; // Reset to original
+            editedTitle = note.title;
             editModeActive = false;
             isEditingTitle = false;
         }
@@ -177,20 +153,18 @@
     }
 
     function handleRightClick(event) {
-        // Don't show context menu when editing
         if (isEditingTitle) return;
         
         event.preventDefault();
         event.stopPropagation();
         
-        // Calculate position, including scroll offset
         const x = Math.min(
             event.pageX, 
-            window.innerWidth + window.scrollX - 150 // Estimate menu width
+            window.innerWidth + window.scrollX - 150
         );
         const y = Math.min(
             event.pageY,
-            window.innerHeight + window.scrollY - 100 // Estimate menu height
+            window.innerHeight + window.scrollY - 100
         );
         
         contextMenuPosition = { x, y };
@@ -203,13 +177,11 @@
 </script>
 
 <div class="relative text-xl">
-    <!-- Note item -->
     <div 
         class="group cursor-pointer flex w-full bg-zinc-900 rounded-md border-[1px] border-zinc-700 justify-between items-center h-8 px-2 hover:border-zinc-500 transition-colors"
         
         oncontextmenu={handleRightClick}
     >
-        <!-- Left side: Expand/Collapse icon (if has children) -->
         <div class="flex items-center">
             {#if children.length > 0}
                 <button 
@@ -226,11 +198,9 @@
                 <div class="w-5"></div>
             {/if}
             
-            <!-- Note title -->
             
         </div>
         {#if isEditingTitle}
-                <!-- Separate component for editing mode -->
                 <div class="flex-grow" onclick={preventPropagation}>
                     <input 
                         type="text" 
@@ -251,7 +221,6 @@
                 >{note.title}</span>
                 </button>
             {/if}
-        <!-- Add child button -->
         <button 
             class="invisible group-hover:visible flex items-center justify-center w-5 h-5 text-zinc-400 hover:text-white transition-colors"
             onclick={addChildNote}
@@ -261,17 +230,15 @@
         </button>
     </div>
     
-    <!-- Child notes (if expanded) -->
     {#if dropdown && children.length > 0}
         <div class="flex flex-col w-full pl-4 gap-1 mt-1 border-l border-zinc-800">
             {#each children as child (child._id)}
-                <NoteIcon note={child} parentFetchChildren={fetchChildren} />
+                <NoteIcon note={child} parentGetChildren={fetchChildren} />
             {/each}
         </div>
     {/if}
 </div>
 
-<!-- Context menu -->
 {#if showContextMenu}
     <div 
         id="context-menu"
