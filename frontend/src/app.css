@@ -1,12 +1,19 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
-
 .no-scrollbar::-webkit-scrollbar {
-  display: none;
+	display: none;
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none; /* IE & Edge */
-  scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE & Edge */
+	scrollbar-width: none; /* Firefox */
 }
+
+.ProseMirror:focus {
+	outline: none;
+}
+
+h1 {
+        @apply mb-4 text-2xl font-bold text-red-700;
+    }
