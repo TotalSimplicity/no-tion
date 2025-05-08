@@ -18,25 +18,11 @@
     editor = new Editor({
       element: editorEl,
       content: noteContent,
-      extensions: [StarterKit, Markdown, Slash.configure({
-      suggestion: {
-        items: () => suggestions,
-      },
-    }),],
-    editorProps: {
-      handleDOMEvents: {
-        keydown: (_, event) => enableKeyboardNavigation(event),
-      },
-    },
-      onTransaction: () => {
-        editor = editor;
-      },
+      extensions: [StarterKit, Markdown],
     });
 
-    // Bind the editor to the DOM element
     editor.setOptions({ element: editorEl });
 
-    // Register the update event listener
     editor.on('update', ({ editor }) => {
       const htmlContent = editor.getHTML();
       console.log('Updated content:', htmlContent);
@@ -44,7 +30,6 @@
     });
   });
 
-  // Clean up the editor when the component is destroyed
   onDestroy(() => {
     if (editor) {
       editor.destroy();
