@@ -4,22 +4,31 @@
   import StarterKit from '@tiptap/starter-kit';
   import { Markdown } from 'tiptap-markdown';
   import { updateNote } from '$lib/note-data.svelte';
+  import { Slash, enableKeyboardNavigation } from "@harshtalks/slash-tiptap";
+  import { suggestions } from '$lib/suggestions';
 
-  // Props passed into the component
+
 
   let { noteContent, noteId } = $props();
 
   let editor;
   let editorEl;
 
-  // Create editor instance when component mounts
   onMount(() => {
     editor = new Editor({
       element: editorEl,
       content: noteContent,
-      extensions: [StarterKit, Markdown],
+      extensions: [StarterKit, Markdown, Slash.configure({
+      suggestion: {
+        items: () => suggestions,
+      },
+    }),],
+    editorProps: {
+      handleDOMEvents: {
+        keydown: (_, event) => enableKeyboardNavigation(event),
+      },
+    },
       onTransaction: () => {
-        // Force Svelte's reactivity system to recognize the change
         editor = editor;
       },
     });
@@ -49,5 +58,5 @@
 
 <div
   bind:this={editorEl}
-  class="p-4 bg-black"
+  class="p-4 bg-main w-full"
 ></div>

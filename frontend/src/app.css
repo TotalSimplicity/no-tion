@@ -1,6 +1,13 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+@theme {
+	--font-fira: 'Fira Code', monospace;
+	--color-main: #091117;
+	--color-secondary: #0d1821;
+	--color-accent: #a9fff7;
+}
+
 .no-scrollbar::-webkit-scrollbar {
 	display: none;
 }
@@ -24,4 +31,28 @@ h2 {
 
 h3 {
 	@apply mt-2 text-xl font-bold;
+}
+
+ul {
+	list-style-type: disc;
+	margin-left: 1.5rem;
+}
+
+ol {
+	list-style-type: decimal;
+	margin-left: 1.5rem;
+}
+
+li {
+	margin-bottom: 0.5rem;
+}
+
+code {
+	@apply font-fira rounded bg-gray-800 px-1 py-0.5 text-gray-100;
+}
+
+/* Style for block code (preformatted text) */
+pre {
+	@apply font-fira overflow-x-auto rounded-md bg-gray-800 p-4 text-gray-100;
+	line-height: 1.5;
 }

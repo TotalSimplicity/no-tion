@@ -23,19 +23,22 @@
 
 {#key key}
   {#if note}
-    <!-- Input for title -->
-    <input
-      oninput={handleUpdate}
-      type="text"
-      bind:value={note.title}
-      class="text-white w-full bg-black border-b-2 border-gray-800 p-2"
-    />
-
-    <!-- Using the TiptapEditor for content editing -->
-    <RichEditor
-      noteContent={note.content}
-      noteId={note._id}
-    />
+    <div class="flex flex-col items-center overflow-y-auto no-scrollbar h-full w-full">
+      <div class="flex flex-row justify-center w-full pt-8">
+        <input
+          oninput={handleUpdate}
+          type="text"
+          bind:value={note.title}
+          class="text-white field-sizing-content outline-none text-3xl font-bold px-2 border-none ring-offset-0 ring-0"
+        />
+      </div>
+      <div class="w-2/3">
+        <RichEditor
+          noteContent={note.content}
+          noteId={note._id}
+        />
+      </div>
+    </div>
   {:else}
     <div class="w-full h-full flex items-center justify-center">Loading...</div>
   {/if}
