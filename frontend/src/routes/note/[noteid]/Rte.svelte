@@ -32,7 +32,7 @@
     if (!sel || !sel.anchorNode) return;
 
     const text = sel.anchorNode.textContent?.slice(0, sel.anchorOffset) || '';
-    const match = text.match(/\/(\w*)$/);
+    const match = text.match(/\/(\w+)$/);
 
     if (match) {
       console.info('Match found:', match[1]);
@@ -74,7 +74,7 @@
         const sel = window.getSelection();
         if (sel && sel.anchorNode) {
           const text = sel.anchorNode.textContent || '';
-          const newText = text.replace(/\/\w*$/, `/${topCommand.keyword} `);
+          const newText = text.replace(/\/\w+$/, `/${topCommand.keyword} `);
           sel.anchorNode.textContent = newText;
 
           const range = document.createRange();
